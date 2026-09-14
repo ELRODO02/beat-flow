@@ -1,3 +1,13 @@
+# Juan Rodolfo Mosqueda Lozano 
+# 13/09/2026
+# Evidencia Sesión 1
+
+Durante esta sesión se creó y organizó la estructura inicial del proyecto BeatFlow, separando los archivos por su función. Se agregaron las carpetas css para los estilos, js/data para los datos de prueba y js/ui para los componentes de la interfaz, además del archivo principal app.js. También se incluyeron los archivos index.html, .gitignore y README.md.
+
+Se avanzó en el desarrollo de index.html, creando la interfaz principal de la aplicación de música. Se implementó una barra lateral de navegación con las opciones Inicio, Buscar y Biblioteca, accesos a Favoritos y Escuchados recientes, así como un reproductor inferior con portada, nombre de la canción, artista, controles de reproducción, barra de progreso y volumen. También se agregó una navegación inferior para dispositivos móviles y se utilizó Tailwind CSS junto con los archivos de estilos propios para comenzar a desarrollar un diseño adaptable a diferentes tamaños de pantalla.
+
+Codigo realizado de index.html
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -131,4 +141,27 @@
 </body>
 </html>
 
+```
+Variables que queremos que ignore git
+```gitignore
+# macOS
+.DS_Store
 
+# Windows
+Thumbs.db
+Desktop.ini
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.*
+
+# Temporary files
+*.tmp
+*.temp
+```
