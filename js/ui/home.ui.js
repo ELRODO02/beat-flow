@@ -100,7 +100,7 @@ export function renderHome({
                    bg-violet-400/10 px-3 py-1 text-xs font-semibold
                    text-violet-300"
           >
-            BeatFlow · v0.1.0
+            BeatFlow · v0.2.0
           </span>
 
           <h1
