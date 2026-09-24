@@ -1,37 +1,80 @@
-const createTrackCard = (track) => {
-    return`
-    <article class"track-card group rounded-2xl border-white/5 bg-zinc-900/80 p-3 transition duration-300 hover:-translate-y-1 hover:border-violet-500/40">
-        <div class="relative overflow-hidden rounded-xl">
-            <img src="${track.cover}" alt="${track.title}" class="track-card-image aspect-square w-full object-cover" loading="lazy">
-            <button class="play-track absolute button-3 right-4 grid h-11 w-11 place-items-center rounded-full bg-white text-black opacity-0 shadow-xl transition group-hover:opacity-100 focus:opacity-100" data-track-id="${track.id}" arial-label="Seleccionar ${track.title}">
-            ▶️
-            </button>
-            <div class="absolute left-3 top-3 rounded-full bg-black/60 px-2 5 py-1 text-[10px] font-semibold uppercase"> 
-            ${track.genre} 
-            </div>
+function createTrackCard(track) {
+  return `
+    <article
+      class="track-card group rounded-2xl border border-white/5
+             bg-zinc-900/80 p-3 transition duration-300
+             hover:-translate-y-1 hover:border-violet-500/40"
+    >
+      <div class="relative overflow-hidden rounded-xl">
+        <img
+          src="${track.cover}"
+          alt="Portada de ${track.title}"
+          class="track-card-image aspect-square w-full object-cover"
+          loading="lazy"
+        >
+
+        <button
+          type="button"
+          class="play-track absolute bottom-3 right-3 grid h-11 w-11
+                 place-items-center rounded-full bg-white text-black
+                 opacity-0 shadow-xl transition
+                 group-hover:opacity-100 focus:opacity-100"
+          data-track-id="${track.id}"
+          aria-label="Seleccionar ${track.title}"
+        >
+          ▶
+        </button>
+
+        <div
+          class="absolute left-3 top-3 rounded-full bg-black/60
+                 px-2.5 py-1 text-[10px] font-semibold uppercase"
+        >
+          ${track.genre}
         </div>
-        <div class="mt-3">
-            <h3 class="truncate font-semibold">${track.title}</h3>
-            <p class="mt-1 truncate text-sm text-zinc-500">${track.artist}</p>
-        </div>
+      </div>
+
+      <div class="mt-3">
+        <h3 class="truncate font-semibold">${track.title}</h3>
+        <p class="mt-1 truncate text-sm text-zinc-500">${track.artist}</p>
+      </div>
     </article>
-    `
+  `
 }
 
-const createRecentlyPlayedRow = (track) => {
-    return `
-    <article class="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-zinc-900">
-        <img src="${track.cover}" alt="${track.title}" class="h-12 w-12 rounded-xl object-cover" loading="lazy">
-        <div class="min-w-0">
-            <p class="truncate text-sm font-semibold">${track.title}</p>
-            <p class="mt-1 truncate text-xs text-zinc-500">${track.artist}</p>
-            <span class="hidden text-xs textzinc-600 sm:block">${track.duration}</span>
-            <button class="play-track grid w-9 h-9 place-items-center rounded-full bg-zinc-800 text-white" data-track-id="${track.id}" arial-label="Seleccionar ${track.title}">
-            ▶️
-            </button>
-        </div>
+function createRecentlyPlayedRow(track) {
+  return `
+    <article
+      class="grid grid-cols-[auto_1fr_auto_auto]
+             items-center gap-3 rounded-2xl px-3 py-2
+             transition hover:bg-zinc-900"
+    >
+      <img
+        src="${track.cover}"
+        alt="Portada de ${track.title}"
+        class="h-12 w-12 rounded-xl object-cover"
+        loading="lazy"
+      >
+
+      <div class="min-w-0">
+        <p class="truncate text-sm font-semibold">${track.title}</p>
+        <p class="truncate text-xs text-zinc-500">${track.artist}</p>
+      </div>
+
+      <span class="hidden text-xs text-zinc-600 sm:block">
+        ${track.duration}
+      </span>
+
+      <button
+        type="button"
+        class="play-track grid h-9 w-9 place-items-center
+               rounded-full bg-zinc-800 text-white"
+        data-track-id="${track.id}"
+        aria-label="Seleccionar ${track.title}"
+      >
+        ▶
+      </button>
     </article>
-    `
+  `
 }
 
 export function renderHome({
