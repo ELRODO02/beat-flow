@@ -203,3 +203,24 @@ footer {
     animation-iteration-count: 1 !important;
   }
 }
+
+.favorite-track {
+  transition:
+    transform var(--transition-fast),
+    color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.favorite-track:hover {
+  transform: scale(1.05);
+}
+
+.favorite-track[aria-pressed="true"] {
+  color: #f43f5e;
+}
+
+/* Barra del reproductor */
+
+.player-range {
+  accent-color: var(--color-brand-primary);
+}

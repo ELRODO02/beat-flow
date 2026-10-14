@@ -1,445 +1,474 @@
-import {
-  renderHome,
-} from './ui/home.ui.js'
-
-// Import nueva
+import { renderHome } from './ui/home.ui.js'
 import { renderSearch } from './ui/search.ui.js'
-import { renderEmpty,renderError,renderLoading } from './ui/states.ui.js'
+import { renderEmpty, renderError, renderLoading } from './ui/states.ui.js'
 
+import {
+  getTrackStreamUrl,
+  getTrendingTracks,
+  searchTracks,
+} from './api/audius.api.js'
 
-// import sesion 3
-import { getTrackStreamUrl,getTrendingTracks,searchTracks } from './api/audius.api.js'
-import { getNextTrack,getPreviousTrack,setQueue } from './services/queue.service.js'
-import { getPlayerSnapshot,loadAudio,onPlayerEvent,pauseAudio,playAudio,seekAudio,setVolume,toggleAudio } from './services/player.service.js'
+import {
+  getNextTrack,
+  getPreviousTrack,
+  setQueue,
+} from './services/queue.service.js'
 
-import{createPlayerUI}from './ui/player.ui.js'
+import {
+  getPlayerSnapshot,
+  loadAudio,
+  onPlayerEvent,
+  playAudio,
+  seekAudio,
+  setVolume,
+  toggleAudio,
+} from './services/player.service.js'
 
+import { createPlayerUI } from './ui/player.ui.js'
 
-const app =document.querySelector('#app')
-const playButton=document.querySelector('#play-button')
-const globalSearch=document.querySelector('#global-search')
-// const de sesion 3
-const previousButton=document.querySelector('#previous-button')
-const nextButton=document.querySelector('#next-button')
-const progressRange=document.querySelector('#progress-range')
-const volumeRange=document.querySelector('#volume-range')
-const playerUI=createPlayerUI()
+import {
+  addToHistory,
+  getFavorites,
+  getHistory,
+  getLastTrack,
+  getVolume,
+  isFavorite,
+  saveLastTrack,
+  saveVolume,
+  toggleFavorite,
+} from './services/storage.service.js'
 
+import { renderLibrary } from './ui/library.ui.js'
 
-const state={
+const app = document.querySelector('#app')
+const globalSearch = document.querySelector('#global-search')
+const playButton = document.querySelector('#play-button')
+const previousButton = document.querySelector('#previous-button')
+const nextButton = document.querySelector('#next-button')
+const progressRange = document.querySelector('#progress-range')
+const volumeRange = document.querySelector('#volume-range')
+
+const playerUI = createPlayerUI()
+
+const state = {
   currentView: 'home',
   currentTrack: null,
-  trendingTracks:[],
+  trendingTracks: [],
+  searchResults: [],
+  searchQuery: '',
+  favorites: [],
+  history: [],
   isPlaying: false,
-  searchResults:[],
-  searchQuery:''
 }
 
+
+const FALLBACK_COVER =
+  'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=600&q=80'
+
+// Detectar imágenes que no se pudieron cargar
+document.addEventListener('error', (event) => {
+  const img = event.target
+
+  if (!(img instanceof HTMLImageElement)) {
+    return
+  }
+
+  // Evitar intentar cargar el respaldo repetidamente
+  if (img.dataset.fallbackApplied === 'true') {
+    return
+  }
+
+  img.dataset.fallbackApplied = 'true'
+  img.src = FALLBACK_COVER
+
+}, true)
+
+
 async function initializeApp() {
+  state.favorites = getFavorites()
+  state.history = getHistory()
+
+  const savedVolume = getVolume()
+  setVolume(savedVolume)
+  playerUI.renderVolume(savedVolume)
+
   registerNavigationEvents()
   registerGlobalEvents()
   registerPlayerEvents()
-  setVolume(Number(volumeRange.value))
+
   await loadHome()
+  restoreLastTrack()
 }
-async function loadHome(){
-  state.currentView='home'
-  renderLoading({
-    target:app,
-    message:'Cargando rolas en tendencias...'
-  })
+
+function restoreLastTrack() {
+  const track = getLastTrack()
+  if (!track) {
+    return
+  }
+
+  state.currentTrack = track
+  playerUI.renderTrack(track)
+  playerUI.renderFavorite(isFavorite(track.id))
+}
+
+async function loadHome() {
+  state.currentView = 'home'
   updateNavigationStyles()
-  try{
-    state.trendingTracks=await getTrendingTracks()
+  renderLoading({
+    target: app,
+    message: 'Cargando rolas en tendencias...',
+  })
+
+  try {
+    state.trendingTracks = await getTrendingTracks()
     renderHome({
-      target:app,
-      trendingTracks:state.trendingTracks,
-      recentlyPlayedTracks:state.trendingTracks.slice(0,4)
+      target: app,
+      trendingTracks: state.trendingTracks,
+      recentlyPlayedTracks: state.trendingTracks.slice(0, 4),
     })
-  }catch(error){
-    console.error(error)
+  } catch (error) {
+    console.error('Error al cargar tendencias:', error)
     renderError({
-      target:app,
-      message:'No pudimos cargar las rolas desde audius',
-      onRetry:loadHome
+      target: app,
+      message: 'No pudimos cargar las rolas desde Audius',
+      onRetry: loadHome,
     })
   }
 }
 
 async function executeSearch(query) {
- const normalizedQuery = query.trim()
- state.currentView = 'search'
- state.searchQuery = normalizedQuery
-
+  const normalizedQuery = query.trim()
+  state.currentView = 'search'
+  state.searchQuery = normalizedQuery
   updateNavigationStyles()
-  if(normalizedQuery.length<2){
+
+  if (normalizedQuery.length < 2) {
     renderEmpty({
-      target:app,
-      title:'Escribe una busqueda',
-      message:'Utiliza al menos 2 caracteres para la busqueda'
+      target: app,
+      title: 'Escribe una búsqueda',
+      message: 'Utiliza al menos 2 caracteres para la búsqueda',
     })
     return
   }
+
   renderLoading({
-    target:app,
-    message:`Buscando "${normalizedQuery}"`
+    target: app,
+    message: `Buscando "${normalizedQuery}"`,
   })
-  try{
-    state.searchResults=await searchTracks(normalizedQuery)
-    if(state.searchResults.length===0){
+
+  try {
+    state.searchResults = await searchTracks(normalizedQuery)
+
+    if (state.searchResults.length === 0) {
       renderEmpty({
-        target:app,
-        title:'Sin resultados',
-        message:`No encontramos canciones para "${normalizedQuery}"`
+        target: app,
+        title: 'Sin resultados',
+        message: `No encontramos canciones para "${normalizedQuery}"`,
       })
       return
     }
+
     renderSearch({
-      target:app,
-      query:normalizedQuery,
-      tracks:state.searchResults
+      target: app,
+      query: normalizedQuery,
+      tracks: state.searchResults,
     })
-  }catch(error){
-    console.error(error)
+  } catch (error) {
+    console.error('Error al buscar:', error)
     renderError({
-      target:app,
-      message:'No encontramos resultados',
-      onRetry:()=>executeSearch(normalizedQuery)
+      target: app,
+      message: 'No encontramos resultados',
+      onRetry: () => executeSearch(normalizedQuery),
     })
   }
 }
 
-function getActiveCollection(){
-  if(state.currentView==='search'&&state.searchResults.length>0){
+// También reconoce canciones de Biblioteca, no solo de Inicio y Búsqueda.
+function getActiveCollection() {
+  if (state.currentView === 'search') {
     return state.searchResults
   }
+
+  if (state.currentView === 'library') {
+    const known = [...state.favorites, ...state.history]
+    return known.filter(
+      (track, index) =>
+        known.findIndex((item) => String(item.id) === String(track.id)) === index,
+    )
+  }
+
   return state.trendingTracks
 }
-// De aqui en adelante es sesion 3
-async function playTrack(trackId){
-  const tracks=getActiveCollection()
-  const track=tracks.find((item)=>item.id===trackId)
-  if(!track){
+
+function getAllKnownTracks() {
+  return [
+    ...state.trendingTracks,
+    ...state.searchResults,
+    ...state.favorites,
+    ...state.history,
+    state.currentTrack,
+  ].filter(Boolean)
+}
+
+function handleFavorite(trackId) {
+  const track = getAllKnownTracks().find(
+    (item) => String(item.id) === String(trackId),
+  )
+
+  if (!track) {
     return
   }
-  if(track.isStreamable===false){
-    alert('La cancion no está disponible')
+
+  state.favorites = toggleFavorite(track)
+
+  if (String(state.currentTrack?.id) === String(track.id)) {
+    playerUI.renderFavorite(isFavorite(track.id))
+  }
+
+  if (state.currentView === 'library') {
+    renderLibraryView()
+  }
+}
+
+async function playTrack(trackId) {
+  const tracks = getActiveCollection()
+  const track = tracks.find(
+    (item) => String(item.id) === String(trackId),
+  )
+
+  if (!track) {
     return
   }
-  setQueue(tracks,track.id)
+
+  if (track.isStreamable === false) {
+    alert('La canción no está disponible')
+    return
+  }
+
+  setQueue(tracks, track.id)
   await loadAndPlayTrack(track)
 }
 
-async function loadAndPlayTrack(track){
-  try{
-    state.currentTrack=track
+
+async function loadAndPlayTrack(track) {
+  try {
+    state.currentTrack = track
+
     playerUI.renderTrack(track)
-    const streamUrl=getTrackStreamUrl(track.id)
+
+    playerUI.renderFavorite(
+      isFavorite(track.id)
+    )
+
+    const streamUrl = getTrackStreamUrl(track.id)
+
     loadAudio(streamUrl)
-    await playAudio()
-  }catch(error){
-    alert(`No es posible reproducir la cancion ${error}`)
+
+    const started = await playAudio()
+
+    if (!started) {
+      return
+    }
+
+    // Evitar registrar una canción reemplazada
+    if (
+      String(state.currentTrack?.id) !==
+      String(track.id)
+    ) {
+      return
+    }
+
+    state.history = addToHistory(track)
+
+    saveLastTrack(track)
+
+  } catch (error) {
+    console.error(
+      'Error al reproducir la canción:',
+      error
+    )
+
+    alert(
+      'No fue posible reproducir esta canción.'
+    )
   }
 }
 
-async function playNextTrack(){
-  const track=getNextTrack()
-  if(!track){
+
+async function playNextTrack() {
+  const track = getNextTrack()
+  if (!track) {
     return
   }
+
   await loadAndPlayTrack(track)
 }
 
-async function playPreviousTrack(){
-  const snapshot=getPlayerSnapshot()
-  if(snapshot.currentTime>3){
+async function playPreviousTrack() {
+  const snapshot = getPlayerSnapshot()
+  if (snapshot.currentTime > 3) {
     seekAudio(0)
     return
   }
-  const track=getPreviousTrack()
-  if(!track){
+
+  const track = getPreviousTrack()
+  if (!track) {
     return
   }
+
   await loadAndPlayTrack(track)
 }
 
-function registerPlayerEvents(){
-  onPlayerEvent('play',()=>{
-    state.isPlaying=true
+function registerPlayerEvents() {
+  onPlayerEvent('play', () => {
+    state.isPlaying = true
     playerUI.renderPlaying(true)
   })
-  onPlayerEvent('pause',()=>{
-    state.isPlaying=false
+
+  onPlayerEvent('pause', () => {
+    state.isPlaying = false
     playerUI.renderPlaying(false)
   })
-  onPlayerEvent('timeupdate',(payload)=>{
+
+  onPlayerEvent('timeupdate', (payload) => {
     playerUI.renderProgress(payload)
   })
-  onPlayerEvent('metadata',({duration})=>{
+
+  onPlayerEvent('metadata', ({ duration }) => {
     playerUI.renderProgress({
-      currentTime:0,
-      duration
+      currentTime: 0,
+      duration,
     })
   })
-  onPlayerEvent('volumechange',({volume})=>{
+
+  onPlayerEvent('volumechange', ({ volume }) => {
     playerUI.renderVolume(volume)
   })
-  onPlayerEvent('ended',playNextTrack)
+
+  onPlayerEvent('ended', playNextTrack)
+
   onPlayerEvent('error', (error) => {
     console.error('Audio error:', error)
-
-    alert(
-        'No fue posible reproducir esta canción.'
-    )
-})
-}
-//Hasta aqui es sesion 3
-
-function renderLibraryPlaceholder(){
-  state.currentView='library'
-  updateNavigationStyles()
-  renderEmpty({
-    target:app,
-    title:'Proximamente...',
-    message:'Canciones favoritas, historial y preferencias'
+    alert('No fue posible reproducir esta canción.')
   })
 }
 
+function renderLibraryView() {
+  state.currentView = 'library'
+  state.favorites = getFavorites()
+  state.history = getHistory()
 
-function renderCurrentView() {
-  if (state.currentView === 'home') {
-    renderHome({
-      target: app,
-      trendingTracks,
-      recentlyPlayedTracks,
-    })
+  renderLibrary({
+    target: app,
+    favorites: state.favorites,
+    history: state.history,
+  })
 
-    return
-  }
-
-  renderPlaceholderView(state.currentView)
-}
-
-function renderPlaceholderView(view) {
-  const content = {
-    search: {
-      eyebrow: 'Sesión 2',
-      title: 'Buscar música',
-      description:
-        'En la siguiente sesión esta vista se conectará con una API musical real.',
-    },
-
-    library: {
-      eyebrow: 'Sesión 4',
-      title: 'Tu biblioteca',
-      description:
-        'Más adelante aparecerán favoritos, historial y preferencias.',
-    },
-  }
-
-  const selected = content[view]
-
-  if (!selected) {
-    return
-  }
-
-  app.innerHTML = `
-    <section class="grid min-h-[60vh] place-items-center">
-      <div
-        class="max-w-xl rounded-3xl border border-white/10
-               bg-zinc-900/60 p-8 text-center"
-      >
-        <p
-          class="text-xs font-semibold uppercase
-                 tracking-[0.2em] text-violet-400"
-        >
-          ${selected.eyebrow}
-        </p>
-
-        <h1 class="mt-3 text-4xl font-bold">
-          ${selected.title}
-        </h1>
-
-        <p class="mt-4 leading-7 text-zinc-400">
-          ${selected.description}
-        </p>
-
-        <button
-          id="back-home"
-          type="button"
-          class="mt-6 rounded-full bg-white px-5 py-2.5
-                 text-sm font-bold text-black"
-        >
-          Volver al inicio
-        </button>
-      </div>
-    </section>
-  `
-
-  document
-    .querySelector('#back-home')
-    ?.addEventListener(
-      'click',
-      () => navigateTo('home'),
-    )
+  updateNavigationStyles()
 }
 
 function registerNavigationEvents() {
   document.querySelectorAll('[data-view]').forEach((button) => {
-      button.addEventListener('click',() => {
-          const view=button.dataset.view
-          if(view==='home'){
-            loadHome()
-            return
-          }
-          if(view==='library'){
-            renderLibraryPlaceholder()
-            return
-          }
-          if(view==='search'){
-            state.currentView='search'
-            updateNavigationStyles()
-            globalSearch.focus()
-            renderEmpty({
-              target:app,
-              title:'Busca tu rola favorita',
-              message:'Escribe una cancion o artista en el buscador'
-            })
-            return
-          }
-        },
-      )
-    })
-}
+    button.addEventListener('click', () => {
+      const view = button.dataset.view
 
-function navigateTo(view) {
-  state.currentView = view
-  renderCurrentView()
-  updateNavigationStyles()
+      if (view === 'home') {
+        loadHome()
+        return
+      }
+
+      if (view === 'library') {
+        renderLibraryView()
+        return
+      }
+
+      if (view === 'search') {
+        state.currentView = 'search'
+        updateNavigationStyles()
+        globalSearch.focus()
+        renderEmpty({
+          target: app,
+          title: 'Busca tu rola favorita',
+          message: 'Escribe una canción o artista en el buscador',
+        })
+      }
+    })
+  })
 }
 
 function updateNavigationStyles() {
-  document
-    .querySelectorAll('.nav-item')
-    .forEach((item) => {
-      const isActive =
-        item.dataset.view === state.currentView
+  document.querySelectorAll('.nav-item').forEach((item) => {
+    item.classList.toggle(
+      'nav-item-active',
+      item.dataset.view === state.currentView,
+    )
+  })
 
-      item.classList.toggle(
-        'nav-item-active',
-        isActive,
-      )
-    })
-
-  document
-    .querySelectorAll('.mobile-nav-item')
-    .forEach((item) => {
-      const isActive =
-        item.dataset.view === state.currentView
-
-      item.classList.toggle(
-        'mobile-nav-active',
-        isActive,
-      )
-    })
+  document.querySelectorAll('.mobile-nav-item').forEach((item) => {
+    item.classList.toggle(
+      'mobile-nav-active',
+      item.dataset.view === state.currentView,
+    )
+  })
 }
 
 function registerGlobalEvents() {
+  // Delegación: botones de favoritos de las tarjetas y de reproducción.
   document.addEventListener('click', async (event) => {
- const playTrackButton =
- event.target.closest('.play-track')
- if (!playTrackButton) {
- return
- }
- await playTrack(
- playTrackButton.dataset.trackId,
- )
-})
-
-
-  globalSearch.addEventListener('keydown',(event)=>{
-    if(event.key!=='Enter'){
+    const favoriteButton = event.target.closest('.favorite-track')
+    if (favoriteButton) {
+      handleFavorite(favoriteButton.dataset.trackId)
       return
     }
+
+    const playTrackButton = event.target.closest('.play-track')
+    if (playTrackButton) {
+      await playTrack(playTrackButton.dataset.trackId)
+    }
+  })
+
+  const playerFavoriteButton = document.querySelector('#player-favorite-button')
+  playerFavoriteButton?.addEventListener('click', () => {
+    if (!state.currentTrack) {
+      return
+    }
+
+    handleFavorite(state.currentTrack.id)
+  })
+
+  globalSearch.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') {
+      return
+    }
+
     event.preventDefault()
     executeSearch(globalSearch.value)
   })
 
   playButton.addEventListener('click', async () => {
     if (!state.currentTrack) {
-        return
+      return
     }
 
     try {
-        await toggleAudio()
+      await toggleAudio()
     } catch (error) {
-        console.error(
-            'No fue posible cambiar la reproduccion:',
-            error
-        )
+      console.error('No fue posible cambiar la reproducción:', error)
     }
-})
-//Aqui es sesion 3
-  previousButton.addEventListener('click',playPreviousTrack)
-  nextButton.addEventListener('click',playNextTrack)
+  })
 
-  progressRange.addEventListener('input',()=>{
+  previousButton.addEventListener('click', playPreviousTrack)
+  nextButton.addEventListener('click', playNextTrack)
+
+  progressRange.addEventListener('input', () => {
     seekAudio(Number(progressRange.value))
   })
 
-volumeRange.addEventListener(
-     'input',
-     () => {
-       setVolume(
-         Number(volumeRange.value),
-       )
-    },
- )
-// Hasta aqui es sesion 3
-  
-}
-
-function getVisibleTracks(){
-  return[...state.trendingTracks,...state.searchResults]
-}
-
-function selectTrack(trackId) {
-  const track=getVisibleTracks().find((item)=>item.id===trackId)
-
-  if (!track) {
-    return
-  }
-
-  state.currentTrack = track
-  state.isPlaying = true
-  updatePlayer()
-}
-
-function updatePlayer() {
-  const track = state.currentTrack
-
-  if (!track) {
-    return
-  }
-
-  playerTitle.textContent = track.title
-  playerArtist.textContent = track.artist
-  playerCover.src = track.cover
-  playerCover.alt = `Portada de ${track.title}`
-
-  playButton.textContent =
-    state.isPlaying
-      ? '❚❚'
-      : '▶'
-
-  playButton.setAttribute(
-    'aria-label',
-    state.isPlaying
-      ? 'Pausar'
-      : 'Reproducir',
-  )
+  volumeRange.addEventListener('input', () => {
+    const volume = Number(volumeRange.value)
+    setVolume(volume)
+    saveVolume(volume)
+  })
 }
 
 initializeApp()
-
- 

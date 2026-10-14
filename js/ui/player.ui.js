@@ -30,6 +30,11 @@ export function createPlayerUI() {
       '#player-artist',
     )
 
+  const favoriteButton =
+    document.querySelector(
+      '#player-favorite-button'
+    )
+
   const playButton =
     document.querySelector(
       '#play-button',
@@ -114,10 +119,32 @@ export function createPlayerUI() {
       String(value)
   }
 
+  function renderFavorite(favorite) {
+  if (!favoriteButton) {
+    return
+  }
+
+  favoriteButton.textContent =
+    favorite ? '♥' : '♡'
+
+  favoriteButton.setAttribute(
+    'aria-label',
+    favorite
+      ? 'Quitar de favoritos'
+      : 'Agregar a favoritos'
+  )
+
+  favoriteButton.setAttribute(
+    'aria-pressed',
+    String(favorite)
+  )
+}
+
   return {
     renderTrack,
     renderPlaying,
     renderProgress,
     renderVolume,
+    renderFavorite,
   }
 }
