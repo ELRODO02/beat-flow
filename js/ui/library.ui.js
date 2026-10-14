@@ -38,6 +38,7 @@ function createTrackRow(
                        bg-zinc-800"
                 data-track-id="${track.id}"
                 aria-label="Quitar ${track.title} de favoritos"
+                aria-pressed="true"
               >
                 ♥
               </button>

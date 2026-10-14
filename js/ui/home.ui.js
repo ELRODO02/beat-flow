@@ -25,6 +25,18 @@ function createTrackCard(track) {
           ▶
         </button>
 
+      <button
+          type="button"
+          class="favorite-track absolute right-3 top-3
+                grid h-9 w-9 place-items-center
+                rounded-full bg-black/60 text-white"
+          data-track-id="${track.id}"
+          aria-label="Agregar ${track.title} a favoritos"
+          aria-pressed="false"
+        >
+          ♡
+      </button>
+
         <div
           class="absolute left-3 top-3 rounded-full bg-black/60
                  px-2.5 py-1 text-[10px] font-semibold uppercase"
@@ -100,7 +112,7 @@ export function renderHome({
                    bg-violet-400/10 px-3 py-1 text-xs font-semibold
                    text-violet-300"
           >
-            BeatFlow · v0.3.0
+            BeatFlow · v1.0.0
           </span>
 
           <h1
