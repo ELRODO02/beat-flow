@@ -141,6 +141,38 @@ footer {
     );
 }
 
+/* Controles del reproductor */
+.player-range {
+  appearance: none;
+  height: 0.375rem;
+  border-radius: 999px;
+  background: var(--color-bg-tertiary);
+  accent-color: var(--color-brand-primary);
+}
+
+.player-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 999px;
+  background: white;
+  cursor: pointer;
+}
+
+.player-range::-moz-range-thumb {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 0;
+  border-radius: 999px;
+  background: white;
+  cursor: pointer;
+}
+
+.player-range:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 4px;
+}
+
 .track-card-image {
   transition: transform 500ms ease;
 }

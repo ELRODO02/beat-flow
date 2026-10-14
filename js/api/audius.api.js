@@ -27,11 +27,19 @@ function getClient() {
 }
 
 function formatDuration(seconds = 0) {
-  const safeSeconds = Number.isFinite(seconds) ? seconds : 0
-  const minutes = Math.floor(safeSeconds / 60)
-  const remainingSeconds = Math.floor(safeSeconds % 60)
+  const safeSeconds = Number.isFinite(seconds)
+    ? seconds
+    : 0
 
-  return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`
+  const minutes = Math.floor(safeSeconds / 60)
+
+  const remainingSeconds = Math.floor(
+    safeSeconds % 60,
+  )
+
+  return `${minutes}:${String(
+    remainingSeconds,
+  ).padStart(2, '0')}`
 }
 
 function normalizeArtwork(artwork) {
@@ -47,7 +55,8 @@ function normalizeTrack(track) {
   return {
     id: track.id,
     title: track.title || 'Sin título',
-    artist: track.user?.name || 'Artista desconocido',
+    artist:
+      track.user?.name || 'Artista desconocido',
     genre: track.genre || 'Unknown',
     duration: formatDuration(track.duration),
     durationSeconds: track.duration || 0,
@@ -61,28 +70,46 @@ function normalizeTrack(track) {
 export async function getTrendingTracks() {
   const audius = getClient()
 
-  const response = await audius.tracks.getTrendingTracks({
-    time: APP_CONFIG.trending.time,
-    limit: APP_CONFIG.trending.limit,
-  })
+  const response =
+    await audius.tracks.getTrendingTracks({
+      time: APP_CONFIG.trending.time,
+      limit: APP_CONFIG.trending.limit,
+    })
 
-  return (response.data || []).map(normalizeTrack)
+  return (response.data || []).map(
+    normalizeTrack,
+  )
 }
 
 export async function searchTracks(query) {
   const normalizedQuery = query.trim()
 
-  if (normalizedQuery.length < APP_CONFIG.search.minLength) {
+  if (
+    normalizedQuery.length <
+    APP_CONFIG.search.minLength
+  ) {
     return []
   }
 
   const audius = getClient()
 
-  const response = await audius.tracks.searchTracks({
-    query: normalizedQuery,
-    limit: APP_CONFIG.search.limit,
-    sortMethod: 'relevant',
-  })
+  const response =
+    await audius.tracks.searchTracks({
+      query: normalizedQuery,
+      limit: APP_CONFIG.search.limit,
+      sortMethod: 'relevant',
+    })
 
-  return (response.data || []).map(normalizeTrack)
+  return (response.data || []).map(
+    normalizeTrack,
+  )
+}
+
+
+export function getTrackStreamUrl(trackId) {
+  if (!trackId) {
+    throw new Error('ID de canción no válido')
+  }
+
+  return `https://api.audius.co/v1/tracks/${encodeURIComponent(trackId)}/stream`
 }

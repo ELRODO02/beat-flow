@@ -104,7 +104,8 @@
           class="mt-auto rounded-2xl border border-white/10
                  bg-zinc-900/80 p-4"
         >
-          <p class="font-semibold">BeatFlow v0.2.0</p>
+          <p class="font-semibold">BeatFlow v0.3.0</p>
+
           <p class="mt-1 text-sm text-zinc-500">
             Primera versión visual.
           </p>
@@ -133,7 +134,9 @@
           </a>
 
           <label class="relative flex-1">
-            <span class="sr-only">Buscar canciones</span>
+            <span class="sr-only">
+              Buscar canciones
+            </span>
 
             <span
               class="pointer-events-none absolute left-4 top-1/2
@@ -167,24 +170,27 @@
 
       <main
         id="app"
-        class="mx-auto max-w-7xl px-4 pb-44 pt-5
+        class="mx-auto max-w-7xl px-4 pb-48 pt-5
                md:px-6 lg:pb-36"
       ></main>
 
     </div>
+
   </div>
 
+  <!-- REPRODUCTOR -->
   <footer
     class="fixed inset-x-0 bottom-[68px] z-40 border-t
            border-white/10 bg-zinc-950/95 backdrop-blur
            lg:bottom-0 lg:left-[250px]"
   >
     <div
-      class="grid min-h-[82px] grid-cols-[1fr_auto]
+      class="grid min-h-[96px] grid-cols-[1fr_auto]
              items-center gap-4 px-4 py-3
-             md:grid-cols-[1fr_1fr_1fr] md:px-6"
+             md:grid-cols-[1fr_1.4fr_1fr] md:px-6"
     >
 
+      <!-- Información de la canción -->
       <div class="flex min-w-0 items-center gap-3">
         <img
           id="player-cover"
@@ -194,27 +200,35 @@
         >
 
         <div class="min-w-0">
-          <p id="player-title" class="truncate text-sm font-semibold">
-            Neon Pulse
+          <p
+            id="player-title"
+            class="truncate text-sm font-semibold"
+          >
+            Selecciona una canción
           </p>
 
-          <p id="player-artist" class="truncate text-xs text-zinc-500">
-            Nova Waves
+          <p
+            id="player-artist"
+            class="truncate text-xs text-zinc-500"
+          >
+            BeatFlow
           </p>
         </div>
-
-        <button
-          type="button"
-          class="hidden text-xl text-zinc-500 sm:block"
-          aria-label="Agregar a favoritos"
-        >
-          ♡
-        </button>
       </div>
 
-      <div class="flex items-center justify-center gap-3 md:flex-col md:gap-2">
-        <div class="flex items-center gap-3">
-          <button type="button" aria-label="Anterior">◀</button>
+      <!-- Controles -->
+      <div class="flex flex-col items-center gap-2">
+
+        <div class="flex items-center gap-4">
+
+          <button
+            id="previous-button"
+            type="button"
+            class="text-zinc-400 transition hover:text-white"
+            aria-label="Canción anterior"
+          >
+            ◀
+          </button>
 
           <button
             id="play-button"
@@ -226,40 +240,80 @@
             ▶
           </button>
 
-          <button type="button" aria-label="Siguiente">▶</button>
+          <button
+            id="next-button"
+            type="button"
+            class="text-zinc-400 transition hover:text-white"
+            aria-label="Siguiente canción"
+          >
+            ▶
+          </button>
+
         </div>
 
+        <!-- Barra de progreso -->
         <div
-          class="hidden w-full max-w-md items-center gap-3
-                 text-xs text-zinc-500 md:flex"
+          class="hidden w-full items-center gap-3 md:flex"
         >
-          <span>1:24</span>
+          <span
+            id="current-time"
+            class="w-10 text-right text-xs text-zinc-500"
+          >
+            0:00
+          </span>
 
-          <div class="progress-track">
-            <div class="progress-value w-[42%]"></div>
-          </div>
+          <input
+            id="progress-range"
+            class="player-range flex-1"
+            type="range"
+            min="0"
+            max="100"
+            value="0"
+            step="0.1"
+            aria-label="Progreso de reproducción"
+          >
 
-          <span>3:56</span>
+          <span
+            id="duration-time"
+            class="w-10 text-xs text-zinc-500"
+          >
+            0:00
+          </span>
         </div>
+
       </div>
 
+      <!-- Volumen -->
       <div class="hidden items-center justify-end gap-3 md:flex">
-        <span>🔊</span>
 
-        <div class="progress-track w-28">
-          <div class="progress-value w-[65%]"></div>
-        </div>
+        <span aria-hidden="true">
+          🔊
+        </span>
+
+        <input
+           type="range"
+            class="player-range w-28"
+            id="volume-range"
+            min="0"
+            max="1"
+            value="0.7"
+            step="0.05"
+            aria-label="Volumen"
+          >
+
       </div>
 
     </div>
   </footer>
 
+  <!-- NAVEGACIÓN MÓVIL -->
   <nav
     class="fixed inset-x-0 bottom-0 z-50 grid h-[68px]
            grid-cols-3 border-t border-white/10
            bg-zinc-950 lg:hidden"
     aria-label="Navegación móvil"
   >
+
     <button
       type="button"
       class="mobile-nav-item mobile-nav-active"
@@ -286,8 +340,13 @@
       <span class="text-xl">▥</span>
       <span class="text-[11px]">Biblioteca</span>
     </button>
+
   </nav>
 
-  <script type="module" src="./js/app.js"></script>
+  <script
+    type="module"
+    src="./js/app.js"
+  ></script>
+
 </body>
 </html>
