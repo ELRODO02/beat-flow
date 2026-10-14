@@ -4,6 +4,7 @@ audio.preload = 'metadata'
 audio.volume = 0.7
 
 const listeners = new Map()
+let playbackRequestId = 0
 
 function emit(eventName, payload) {
   const handlers =
@@ -100,21 +101,39 @@ export function onPlayerEvent(
   )
 }
 
-export function loadAudio(
-  streamUrl,
-) {
+
+export function loadAudio(streamUrl) {
+  playbackRequestId++
+
   audio.pause()
   audio.src = streamUrl
   audio.load()
 }
 
 export async function playAudio() {
-  await audio.play()
+  const requestId = ++playbackRequestId
+
+  try {
+    await audio.play()
+    return true
+
+  } catch (error) {
+    if (
+      error.name === 'AbortError' &&
+      requestId !== playbackRequestId
+    ) {
+      return false
+    }
+
+    throw error
+  }
 }
 
 export function pauseAudio() {
+  playbackRequestId++
   audio.pause()
 }
+
 
 export function toggleAudio() {
   if (audio.paused) {
